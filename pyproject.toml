@@ -1,0 +1,26 @@
+[build-system]
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
+
+[project]
+name = "aloof-mcp"
+version = "0.1.0"
+description = "MCP server for Aloof (aloof.si): deploy and manage backend apps, APIs, workers and Postgres from your AI assistant."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "sachin chandra" }]
+requires-python = ">=3.10"
+dependencies = ["mcp>=1.20,<2", "httpx>=0.27"]
+keywords = ["mcp", "model-context-protocol", "paas", "hosting", "deploy", "aloof"]
+classifiers = ["Programming Language :: Python :: 3", "License :: OSI Approved :: MIT License", "Operating System :: OS Independent"]
+
+[project.urls]
+Homepage = "https://www.aloof.si"
+Documentation = "https://api.aloof.si/llms.txt"
+
+[project.scripts]
+aloof-mcp = "aloof_mcp.server:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/aloof_mcp"]
