@@ -37,12 +37,12 @@ def signup(email: str) -> dict:
     return _r("POST","/v1/signup", json={"email": email})
 @mcp.tool()
 def deploy_app(name: str, image: str = "", git_url: str = "", git_ref: str = "", plan: str = "shared-1x-1gb",
-               port: int = 8080, env: dict[str,str] | None = None, instances: int = 1, api_key: str = "") -> dict:
+               port: int = 8080, env: dict[str,str] | None = None, instances: int = 1, region: str = "", api_key: str = "") -> dict:
     """Deploy (or redeploy) a backend app. Give either `image` (e.g. 'nginx:alpine') or `git_url` of a repo
     containing a Dockerfile. `port` is the port the app listens on (PORT env is also set). `plan` from list_plans
-    (shared-* or perf-*; gpu-* only once GPUs launch). Returns app record with public url; poll get_status until status=='running'."""
+    (shared-* or perf-*; gpu-* only once GPUs launch). `region` from list_regions (live only; default nbg1; fixed once created). Returns app record with public url; poll get_status until status=='running'."""
     src = {"image": image} if image else {"git": git_url, **({"ref": git_ref} if git_ref else {})}
-    return _r("POST","/v1/apps", api_key, json={"name":name,"source":src,"plan":plan,"port":port,"env":env or {},"instances":instances})
+    return _r("POST","/v1/apps", api_key, json={"name":name,"source":src,"plan":plan,"port":port,"env":env or {},"instances":instances, **({"region": region} if region else {})})
 @mcp.tool()
 def get_status(name: str, api_key: str = "") -> dict:
     """Get status (queued/building/starting/running/failed), instances, url and errors for an app."""
@@ -72,9 +72,9 @@ def get_usage(api_key: str = "") -> dict:
     """Usage hours and USD cost so far, plus remaining credit (credit_usd)."""
     return _r("GET","/v1/usage", api_key)
 @mcp.tool()
-def create_volume(name: str, size_gb: int = 1, api_key: str = "") -> dict:
-    """Create a persistent volume. Attach it to an app with attach_volume; data survives redeploys."""
-    return _r("POST","/v1/volumes", api_key, json={"name": name, "size_gb": size_gb})
+def create_volume(name: str, size_gb: int = 1, region: str = "", api_key: str = "") -> dict:
+    """Create a persistent volume in `region` (default nbg1). Attach it to an app in the same region with attach_volume; data survives redeploys."""
+    return _r("POST","/v1/volumes", api_key, json={"name": name, "size_gb": size_gb, **({"region": region} if region else {})})
 @mcp.tool()
 def list_volumes(api_key: str = "") -> list | dict:
     """List volumes and which app/path each is attached to."""
@@ -112,10 +112,10 @@ def rollback_app(name: str, version: int | None = None, api_key: str = "") -> di
     """Roll back to an earlier release (default: the previous one). Zero downtime, no rebuild. Poll get_status."""
     return _r("POST", f"/v1/apps/{name}/rollback", api_key, json={"version": version})
 @mcp.tool()
-def create_postgres(name: str, plan: str = "pg-dev", api_key: str = "") -> dict:
+def create_postgres(name: str, plan: str = "pg-dev", region: str = "", api_key: str = "") -> dict:
     """Create a managed Postgres 16 database (plans: pg-dev $2.99/mo, pg-basic $9.99, pg-standard $28.99, pg-perf $60.99; daily
-    backups, 7 kept). Then attach_postgres to inject DATABASE_URL into an app."""
-    return _r("POST", "/v1/pg", api_key, json={"name": name, "plan": plan})
+    backups, 7 kept) in `region` (default nbg1; must match the app's region). Then attach_postgres to inject DATABASE_URL into an app."""
+    return _r("POST", "/v1/pg", api_key, json={"name": name, "plan": plan, **({"region": region} if region else {})})
 @mcp.tool()
 def list_postgres(api_key: str = "") -> list | dict:
     """List managed Postgres databases, status, attached apps and backups."""
@@ -172,6 +172,22 @@ def app_status(name: str, api_key: str = "") -> dict:
 def create_deploy_token(app: str = "", expires_in: str = "90d", api_key: str = "") -> dict:
     """Create a CI deploy token scoped to one app (or the whole account if app is empty). Shown once."""
     return _r("POST", "/v1/tokens", api_key, json={"app": app or None, "expires_in": expires_in})
+@mcp.tool()
+def list_templates() -> dict:
+    """One-click templates (Uptime Kuma, n8n, Umami, ...): id, description, required env vars, volumes, Postgres needs, default plan."""
+    return _r("GET", "/v1/templates")
+@mcp.tool()
+def deploy_template(template: str, name: str, env: dict[str,str] | None = None, plan: str = "", api_key: str = "") -> dict:
+    """Deploy a one-click template (id from list_templates) as app `name`. Creates the volumes and managed Postgres it needs,
+    generates its secrets (returned once in generated_secrets), and starts the deploy. Pass required env vars in `env`."""
+    import re as _re, urllib.parse as _up
+    if not _re.fullmatch(r"[a-z0-9][a-z0-9-]{1,38}[a-z0-9]", template or ""): return {"error": "unknown template id; use list_templates"}
+    return _r("POST", f"/v1/templates/{_up.quote(template, safe='')}/deploy", api_key, json={"name": name, "env": env or {}, **({"plan": plan} if plan else {})})
+@mcp.tool()
+def list_regions() -> dict:
+    """Regions with status (live | coming_soon) computed from healthy nodes, aliases, and region pricing for live regions.
+    Only live regions accept deploy_app/create_volume/create_postgres. Free tier is EU-only."""
+    return _r("GET", "/v1/regions")
 def main():
     """Run the Aloof MCP server over stdio."""
     mcp.run("stdio")

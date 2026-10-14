@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "aloof-mcp"
-version = "0.1.0"
+version = "0.2.0"
 description = "MCP server for Aloof (aloof.si): deploy and manage backend apps, APIs, workers and Postgres from your AI assistant."
 readme = "README.md"
 license = "MIT"

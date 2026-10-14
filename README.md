@@ -61,7 +61,7 @@ Environment:
 ## Tools
 
 <!-- tools:start -->
-34 tools:
+37 tools:
 
 | Tool | What it does |
 |---|---|
@@ -75,7 +75,7 @@ Environment:
 | `set_env` | Set environment variables (triggers rolling restart). |
 | `destroy_app` | Permanently delete an app and stop its instances. |
 | `get_usage` | Usage hours and USD cost so far, plus remaining credit (credit_usd). |
-| `create_volume` | Create a persistent volume. |
+| `create_volume` | Create a persistent volume in `region` (default nbg1). |
 | `list_volumes` | List volumes and which app/path each is attached to. |
 | `attach_volume` | Mount a volume into an app at `path` (rolling redeploy). |
 | `detach_volume` | Unmount a volume from an app (data is kept). |
@@ -84,7 +84,7 @@ Environment:
 | `join_gpu_waitlist` | GPUs (L4, RTX 4090, L40, A100 80GB, H100) are coming soon. |
 | `list_releases` | Release history of an app (every deploy, config change and rollback is a numbered release; status active/superseded/failed). |
 | `rollback_app` | Roll back to an earlier release (default: the previous one). |
-| `create_postgres` | Create a managed Postgres 16 database (plans: pg-dev $2.99/mo, pg-basic $9.99, pg-standard $28.99, pg-perf $60.99; daily backups, 7 kept). |
+| `create_postgres` | Create a managed Postgres 16 database (plans: pg-dev $2.99/mo, pg-basic $9.99, pg-standard $28.99, pg-perf $60.99; daily backups, 7 kept) in `region` (default nbg1; must match the app's region). |
 | `list_postgres` | List managed Postgres databases, status, attached apps and backups. |
 | `attach_postgres` | Connect an app to a database over a private network and inject its connection URL as env `var` (rolling redeploy). |
 | `backup_postgres` | Take an on-demand pg_dump backup now (daily backups happen automatically). |
@@ -99,6 +99,9 @@ Environment:
 | `deploy_with_config` | Deploy using an aloof.toml (fly.toml-style) config parsed to a dict: processes, release_command, mounts, cron, checks, vm size. |
 | `app_status` | Detailed status: release, process groups (web/worker) and their instances, cron jobs, previews, private hostname. |
 | `create_deploy_token` | Create a CI deploy token scoped to one app (or the whole account if app is empty). |
+| `list_templates` | One-click templates (Uptime Kuma, n8n, Umami, ...): id, description, required env vars, volumes, Postgres needs, default plan. |
+| `deploy_template` | Deploy a one-click template (id from list_templates) as app `name`. |
+| `list_regions` | Regions with status (live / coming_soon) computed from healthy nodes, aliases, and region pricing for live regions. |
 <!-- tools:end -->
 
 Destructive tools (`destroy_app`, `delete_postgres`, `restore_postgres`, ...) act immediately; keep your client's
