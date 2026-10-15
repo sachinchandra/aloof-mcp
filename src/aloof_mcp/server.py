@@ -96,8 +96,24 @@ def set_autoscale(name: str, min_instances: int = 0, max_instances: int = 3, tar
               "target_concurrency": target_concurrency, "cpu_percent": cpu_percent, "idle_seconds": idle_seconds})
 @mcp.tool()
 def add_domain(name: str, domain: str, api_key: str = "") -> dict:
-    """Attach a custom domain (CNAME it to <app>.<platform domain>). HTTPS certificate is issued automatically."""
+    """Attach a custom domain to an app. Returns the DNS records to create at the registrar: a TXT ownership record plus either a CNAME (subdomains) or A + AAAA records
+    (root/apex domains; ALIAS/ANAME/CNAME flattening also works). Aloof re-checks DNS automatically every few minutes, and the HTTPS certificate is issued after it verifies.
+    Limits per account: Free 1, Hobby 3, Pro 10 domains. Unverified claims are released after 7 days."""
     return _r("POST",f"/v1/apps/{name}/domains", api_key, json={"domain": domain})
+@mcp.tool()
+def list_domains(name: str = "", api_key: str = "") -> dict:
+    """List custom domains with status (pending, verified, dns_error), last check time, the DNS records still needed, and the plan's domain limit.
+    Pass `name` for one app, or leave it empty for every domain on the account."""
+    r = _r("GET", f"/v1/apps/{name}/domains" if name else "/v1/domains", api_key)
+    return {"domains": r} if isinstance(r, list) else r
+@mcp.tool()
+def verify_domain(name: str, domain: str, api_key: str = "") -> dict:
+    """Check a custom domain's DNS now (TXT ownership + CNAME/A/AAAA routing) and return its status and what is missing. Rate limited; Aloof also re-checks automatically."""
+    return _r("POST",f"/v1/apps/{name}/domains/{domain}/verify", api_key)
+@mcp.tool()
+def remove_domain(name: str, domain: str, api_key: str = "") -> dict:
+    """Remove a custom domain from an app (its certificate stops being renewed). Your DNS records are untouched."""
+    return _r("DELETE",f"/v1/apps/{name}/domains/{domain}", api_key)
 @mcp.tool()
 def join_gpu_waitlist(email: str, gpu: str = "", note: str = "") -> dict:
     """GPUs (L4, RTX 4090, L40, A100 80GB, H100) are coming soon. Add an email to the waitlist; optional `gpu` plan id

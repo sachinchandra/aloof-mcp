@@ -61,7 +61,7 @@ Environment:
 ## Tools
 
 <!-- tools:start -->
-37 tools:
+40 tools:
 
 | Tool | What it does |
 |---|---|
@@ -80,7 +80,10 @@ Environment:
 | `attach_volume` | Mount a volume into an app at `path` (rolling redeploy). |
 | `detach_volume` | Unmount a volume from an app (data is kept). |
 | `set_autoscale` | Enable autoscaling on in-flight requests per instance (and optionally CPU %). |
-| `add_domain` | Attach a custom domain (CNAME it to <app>.<platform domain>). |
+| `add_domain` | Attach a custom domain to an app. |
+| `list_domains` | List custom domains with status (pending, verified, dns_error), last check time, the DNS records still needed, and the plan's domain limit. |
+| `verify_domain` | Check a custom domain's DNS now (TXT ownership + CNAME/A/AAAA routing) and return its status and what is missing. |
+| `remove_domain` | Remove a custom domain from an app (its certificate stops being renewed). |
 | `join_gpu_waitlist` | GPUs (L4, RTX 4090, L40, A100 80GB, H100) are coming soon. |
 | `list_releases` | Release history of an app (every deploy, config change and rollback is a numbered release; status active/superseded/failed). |
 | `rollback_app` | Roll back to an earlier release (default: the previous one). |
@@ -103,6 +106,21 @@ Environment:
 | `deploy_template` | Deploy a one-click template (id from list_templates) as app `name`. |
 | `list_regions` | Regions with status (live / coming_soon) computed from healthy nodes, aliases, and region pricing for live regions. |
 <!-- tools:end -->
+
+## Connecting a custom domain
+
+Ask your assistant to run `add_domain` (app name + domain). It returns the DNS records to create at your registrar:
+
+| Record | Name | Value | When |
+|---|---|---|---|
+| TXT | `_aloof-challenge.<domain>` | `aloof-verify=<token>` | always (proves ownership) |
+| CNAME | `api.example.com` | `<app>.aloof.si` | subdomains |
+| A + AAAA | `example.com` | the edge IPv4 and IPv6 in the response | root (apex) domains. ALIAS/ANAME/CNAME flattening to `<app>.aloof.si` also works |
+
+On Cloudflare, set the routing records to **DNS only** (grey cloud). Aloof re-checks DNS every few minutes, so a pending domain verifies by itself;
+`verify_domain` checks immediately, `list_domains` shows each domain's status (`pending`, `verified`, or `dns_error` if DNS later broke; it is never removed automatically) and
+`remove_domain` removes it. Limits per account: Free 1, Hobby 3, Pro 10 domains; unverified claims are released after 7 days. Once `example.com` is verified, `www.example.com`
+redirects to it (308) if it points at Aloof too. Per-registrar steps (Cloudflare, GoDaddy, Namecheap, Route 53): https://www.aloof.si/docs/domains
 
 Destructive tools (`destroy_app`, `delete_postgres`, `restore_postgres`, ...) act immediately; keep your client's
 "ask before running tools" setting on if you want a human in the loop.
