@@ -204,6 +204,17 @@ def list_regions() -> dict:
     """Regions with status (live | coming_soon) computed from healthy nodes, aliases, and region pricing for live regions.
     Only live regions accept deploy_app/create_volume/create_postgres. Free tier is EU-only."""
     return _r("GET", "/v1/regions")
+@mcp.tool()
+def diagnose_app(name: str, api_key: str = "") -> dict:
+    """Read-only: why is my app broken? Returns recent error log lines, failed health checks, recent deploys, rollbacks and restarts,
+    instance states and exit codes, and likely causes (OOM/exit 137, crash loop, bad release after a deploy, port mismatch or failing
+    health check, suspended for $0 balance, scaled to zero) each with a suggested fix. Changes nothing; secrets and env values are redacted."""
+    return _r("GET", f"/v1/apps/{name}/diagnose", api_key)
+@mcp.tool()
+def set_self_heal(name: str, enabled: bool, api_key: str = "") -> dict:
+    """Self-healing deploys (default on): for ~5 minutes after a deploy the new release's 5xx rate and p95 latency are compared with
+    the previous release; if clearly worse it is rolled back automatically with the reason recorded. Turn it off/on per app."""
+    return _r("PUT", f"/v1/apps/{name}/self-heal", api_key, json={"enabled": enabled})
 def main():
     """Run the Aloof MCP server over stdio."""
     mcp.run("stdio")

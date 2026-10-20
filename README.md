@@ -61,7 +61,7 @@ Environment:
 ## Tools
 
 <!-- tools:start -->
-40 tools:
+42 tools:
 
 | Tool | What it does |
 |---|---|
@@ -105,6 +105,8 @@ Environment:
 | `list_templates` | One-click templates (Uptime Kuma, n8n, Umami, ...): id, description, required env vars, volumes, Postgres needs, default plan. |
 | `deploy_template` | Deploy a one-click template (id from list_templates) as app `name`. |
 | `list_regions` | Regions with status (live / coming_soon) computed from healthy nodes, aliases, and region pricing for live regions. |
+| `diagnose_app` | Read-only: why is my app broken? Returns recent error log lines, failed health checks, recent deploys, rollbacks and restarts, instance states and exit codes, and likely causes (OOM/exit 137, crash loop, bad release after a deploy, port mismatch or failing health check, suspended for $0 balance, scaled to zero) each with a suggested fix. |
+| `set_self_heal` | Self-healing deploys (default on): for ~5 minutes after a deploy the new release's 5xx rate and p95 latency are compared with the previous release; if clearly worse it is rolled back automatically with the reason recorded. |
 <!-- tools:end -->
 
 ## Connecting a custom domain
