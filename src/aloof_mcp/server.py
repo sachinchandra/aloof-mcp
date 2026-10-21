@@ -36,13 +36,13 @@ def signup(email: str) -> dict:
     """Create an account and return an API key (pk_...). Store it; pass as api_key to other tools."""
     return _r("POST","/v1/signup", json={"email": email})
 @mcp.tool()
-def deploy_app(name: str, image: str = "", git_url: str = "", git_ref: str = "", plan: str = "shared-1x-1gb",
+def deploy_app(name: str, image: str = "", git_url: str = "", git_ref: str = "", plan: str = "",
                port: int = 8080, env: dict[str,str] | None = None, instances: int = 1, region: str = "", api_key: str = "") -> dict:
     """Deploy (or redeploy) a backend app. Give either `image` (e.g. 'nginx:alpine') or `git_url` of a repo
     containing a Dockerfile. `port` is the port the app listens on (PORT env is also set). `plan` from list_plans
-    (shared-* or perf-*; gpu-* only once GPUs launch). `region` from list_regions (live only; default nbg1; fixed once created). Returns app record with public url; poll get_status until status=='running'."""
+    (shared-* or perf-*; gpu-* only once GPUs launch); leave it empty to get the largest plan your tier allows (Free: shared-1x-512mb). `region` from list_regions (live only; default nbg1; fixed once created). Returns app record with public url; poll get_status until status=='running'."""
     src = {"image": image} if image else {"git": git_url, **({"ref": git_ref} if git_ref else {})}
-    return _r("POST","/v1/apps", api_key, json={"name":name,"source":src,"plan":plan,"port":port,"env":env or {},"instances":instances, **({"region": region} if region else {})})
+    return _r("POST","/v1/apps", api_key, json={"name":name,"source":src,**({"plan":plan} if plan else {}),"port":port,"env":env or {},"instances":instances, **({"region": region} if region else {})})
 @mcp.tool()
 def get_status(name: str, api_key: str = "") -> dict:
     """Get status (queued/building/starting/running/failed), instances, url and errors for an app."""
