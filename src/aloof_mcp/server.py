@@ -15,11 +15,15 @@ mcp = FastMCP(BRAND, instructions=(
 def _h(k):
     k = k or os.environ.get("ALOOF_API_KEY")
     return {"Authorization": f"Bearer {k}"} if k else {}
+from mcp.server.fastmcp.exceptions import ToolError
+def _err(code, body):
+    d = body.get("detail", body) if isinstance(body, dict) else body
+    return f"Aloof API error {code}: {d if isinstance(d, str) else __import__('json').dumps(d)}"
 def _r(method, path, key=None, **kw):
     r = httpx.request(method, API+path, headers=_h(key), timeout=60, **kw)
     try: body = r.json()
     except Exception: body = r.text
-    if r.status_code >= 400: return {"error": r.status_code, "detail": body}
+    if r.status_code >= 400: raise ToolError(_err(r.status_code, body))   # MCP result isError:true
     return body
 @mcp.tool()
 def list_plans() -> dict:
@@ -54,7 +58,12 @@ def list_apps(api_key: str = "") -> list | dict:
 @mcp.tool()
 def get_logs(name: str, tail: int = 100, api_key: str = "") -> str:
     """Platform events plus recent stdout/stderr of each instance."""
-    r = httpx.get(f"{API}/v1/apps/{name}/logs", params={"tail":tail}, headers=_h(api_key), timeout=60); return r.text
+    r = httpx.get(f"{API}/v1/apps/{name}/logs", params={"tail":tail}, headers=_h(api_key), timeout=60)
+    if r.status_code >= 400:
+        try: body = r.json()
+        except Exception: body = r.text
+        raise ToolError(_err(r.status_code, body))
+    return r.text
 @mcp.tool()
 def scale_app(name: str, instances: int, api_key: str = "") -> dict:
     """Scale an app to N instances (0 stops it). Traffic is round-robined."""
