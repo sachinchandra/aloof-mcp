@@ -73,9 +73,10 @@ def set_env(name: str, env: dict[str, str], api_key: str = "") -> dict:
     """Set environment variables (triggers rolling restart)."""
     return _r("POST",f"/v1/apps/{name}/env", api_key, json={"env":env})
 @mcp.tool()
-def destroy_app(name: str, api_key: str = "") -> dict:
-    """Permanently delete an app and stop its instances."""
-    return _r("DELETE",f"/v1/apps/{name}", api_key)
+def destroy_app(name: str, with_volumes: bool = False, api_key: str = "") -> dict:
+    """Permanently delete an app and stop its instances. Volumes and Postgres databases its template created are deleted too;
+    volumes you attached yourself are detached and kept unless with_volumes=True. The result lists deleted and kept resources."""
+    return _r("DELETE",f"/v1/apps/{name}" + ("?with_volumes=true" if with_volumes else ""), api_key)
 @mcp.tool()
 def get_usage(api_key: str = "") -> dict:
     """Usage hours and USD cost so far, plus remaining credit (credit_usd)."""
