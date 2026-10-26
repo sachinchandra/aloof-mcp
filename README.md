@@ -57,57 +57,71 @@ Environment:
 |---|---|---|
 | `ALOOF_API_KEY` | (none) | Your `pk_...` key. Tools also accept an `api_key` argument. |
 | `ALOOF_API_URL` | `https://api.aloof.si` | API base URL. |
+| `ALOOF_MCP_TOOLS` | (none) | `legacy` also lists the pre-0.3 tool names (see below). |
 
 ## Tools
 
 <!-- tools:start -->
-42 tools:
+25 tools:
 
 | Tool | What it does |
 |---|---|
-| `list_plans` | Aloof pricing (USD excl. |
+| `inspect` | Read-only look at one app. |
+| `list` | Read-only lists. |
 | `signup` | Create an account and return an API key (pk_...). |
-| `deploy_app` | Deploy (or redeploy) a backend app. |
-| `get_status` | Get status (queued/building/starting/running/failed), instances, url and errors for an app. |
-| `list_apps` | List your apps. |
-| `get_logs` | Platform events plus recent stdout/stderr of each instance. |
-| `scale_app` | Scale an app to N instances (0 stops it). |
+| `deploy_app` | Deploy (or redeploy) a backend app from `image` (e.g. |
+| `deploy_template` | Deploy a one-click template (id from list(kind='templates')) as app `name`. |
+| `scale_app` | Scale an app. |
 | `set_env` | Set environment variables (triggers rolling restart). |
+| `rollback_app` | Roll back to an earlier release (default: the previous one). |
+| `set_self_heal` | Self-healing deploys (default on): for ~5 minutes after a deploy the new release's 5xx rate and p95 latency are compared with the previous release; if clearly worse it is rolled back automatically with the reason recorded. |
+| `exec_command` | Run a shell command in a running instance of the app (like `fly ssh console -C`). |
 | `destroy_app` | Permanently delete an app and stop its instances. |
-| `get_usage` | Usage hours and USD cost so far, plus remaining credit (credit_usd). |
-| `create_volume` | Create a persistent volume in `region` (default nbg1). |
-| `list_volumes` | List volumes and which app/path each is attached to. |
-| `attach_volume` | Mount a volume into an app at `path` (rolling redeploy). |
-| `detach_volume` | Unmount a volume from an app (data is kept). |
-| `set_autoscale` | Enable autoscaling on in-flight requests per instance (and optionally CPU %). |
 | `add_domain` | Attach a custom domain to an app. |
-| `list_domains` | List custom domains with status (pending, verified, dns_error), last check time, the DNS records still needed, and the plan's domain limit. |
 | `verify_domain` | Check a custom domain's DNS now (TXT ownership + CNAME/A/AAAA routing) and return its status and what is missing. |
 | `remove_domain` | Remove a custom domain from an app (its certificate stops being renewed). |
-| `join_gpu_waitlist` | GPUs (L4, RTX 4090, L40, A100 80GB, H100) are coming soon. |
-| `list_releases` | Release history of an app (every deploy, config change and rollback is a numbered release; status active/superseded/failed). |
-| `rollback_app` | Roll back to an earlier release (default: the previous one). |
+| `create_volume` | Create a persistent volume in `region` (default nbg1). |
+| `attach_volume` | Mount a volume into an app at `path` (rolling redeploy). |
+| `detach_volume` | Unmount a volume from an app (data is kept). |
 | `create_postgres` | Create a managed Postgres 16 database (plans: pg-dev $2.99/mo, pg-basic $9.99, pg-standard $28.99, pg-perf $60.99; daily backups, 7 kept) in `region` (default nbg1; must match the app's region). |
-| `list_postgres` | List managed Postgres databases, status, attached apps and backups. |
 | `attach_postgres` | Connect an app to a database over a private network and inject its connection URL as env `var` (rolling redeploy). |
-| `backup_postgres` | Take an on-demand pg_dump backup now (daily backups happen automatically). |
-| `snapshot_volume` | Snapshot a volume (tar.gz, 10 kept). |
-| `restore_volume` | Restore a volume from a snapshot. |
-| `exec_command` | Run a shell command in a running instance of the app (like `fly ssh console -C`). |
+| `backup` | Take a backup now. |
+| `restore` | Destructive: overwrite data from a backup; confirm with the user first. |
 | `add_log_drain` | Forward the app's logs to https:// (JSON array POST) or syslog+tls://host:port / syslog+tcp:// / syslog+udp:// (RFC 5424). |
-| `list_offsite_backups` | List encrypted off-site (S3) backups. |
-| `restore_offsite_backup` | Restore a database (kind='pg') or volume (kind='vol') from an off-site backup. |
-| `registry_login` | Save private registry credentials (docker.io, ghcr.io, ECR, GCR/Artifact Registry, any v2 registry) for all apps, or one app. |
-| `add_git_credential` | Private git access. |
-| `deploy_with_config` | Deploy using an aloof.toml (fly.toml-style) config parsed to a dict: processes, release_command, mounts, cron, checks, vm size. |
-| `app_status` | Detailed status: release, process groups (web/worker) and their instances, cron jobs, previews, private hostname. |
+| `add_credential` | Save private source credentials, for all apps or one `app`; encrypted at rest. |
 | `create_deploy_token` | Create a CI deploy token scoped to one app (or the whole account if app is empty). |
-| `list_templates` | One-click templates (Uptime Kuma, n8n, Umami, ...): id, description, required env vars, volumes, Postgres needs, default plan. |
-| `deploy_template` | Deploy a one-click template (id from list_templates) as app `name`. |
-| `list_regions` | Regions with status (live / coming_soon) computed from healthy nodes, aliases, and region pricing for live regions. |
-| `diagnose_app` | Read-only: why is my app broken? Returns recent error log lines, failed health checks, recent deploys, rollbacks and restarts, instance states and exit codes, and likely causes (OOM/exit 137, crash loop, bad release after a deploy, port mismatch or failing health check, suspended for $0 balance, scaled to zero) each with a suggested fix. |
-| `set_self_heal` | Self-healing deploys (default on): for ~5 minutes after a deploy the new release's 5xx rate and p95 latency are compared with the previous release; if clearly worse it is rolled back automatically with the reason recorded. |
+| `join_gpu_waitlist` | GPUs (L4, RTX 4090, L40, A100 80GB, H100) are coming soon. |
 <!-- tools:end -->
+
+## Legacy tool names (before 0.3)
+
+Version 0.3 merged 42 tools into 25: reads are `inspect` (one app) and `list` (account-wide); everything that changes something is still its own tool. The old names keep working when called, but are only listed with `ALOOF_MCP_TOOLS=legacy` (hosted server: `https://mcp.aloof.si/mcp?tools=legacy` or header `X-Aloof-Tools: legacy`).
+
+| Old tool | Use instead |
+|---|---|
+| `list_plans` | `list(kind='plans')` |
+| `get_status` | `inspect(what='status')` |
+| `list_apps` | `list(kind='apps')` |
+| `get_logs` | `inspect(what='logs')` |
+| `set_autoscale` | `scale_app(autoscale={...})` |
+| `get_usage` | `list(kind='usage')` |
+| `list_templates` | `list(kind='templates')` |
+| `list_volumes` | `list(kind='volumes')` |
+| `list_domains` | `list(kind='domains')` |
+| `list_releases` | `inspect(what='releases')` |
+| `diagnose_app` | `inspect(what='diagnose')` |
+| `list_regions` | `list(kind='regions')` |
+| `list_postgres` | `list(kind='postgres')` |
+| `backup_postgres` | `backup(kind='postgres')` |
+| `snapshot_volume` | `backup(kind='volume')` |
+| `restore_volume` | `restore(kind='snapshot')` |
+| `list_offsite_backups` | `list(kind='backups')` |
+| `restore_offsite_backup` | `restore(kind='offsite_pg'/'offsite_vol')` |
+| `registry_login` | `add_credential(kind='registry')` |
+| `add_git_credential` | `add_credential(kind='git_ssh'/'git_token')` |
+| `deploy_with_config` | `deploy_app(config=...)` |
+| `app_status` | `inspect(what='details')` |
+
 
 ## Connecting a custom domain
 

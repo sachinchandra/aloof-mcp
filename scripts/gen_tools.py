@@ -7,7 +7,8 @@ def tools():
     for f in tree.body:
         if isinstance(f, ast.FunctionDef) and any(is_tool(d) for d in f.decorator_list):
             doc = " ".join((ast.get_docstring(f) or "").split())
-            yield f.name, re.split(r"(?<=\.)\s", doc, maxsplit=1)[0]
+            nm = next((k.value.value for d in f.decorator_list if is_tool(d) for k in d.keywords if k.arg == "name"), f.name)
+            yield nm, re.split(r"(?<=\.)\s", doc, maxsplit=1)[0]
 def table():
     rows = list(tools())
     return f"{len(rows)} tools:\n\n| Tool | What it does |\n|---|---|\n" + "".join(f"| `{n}` | {d.replace('|', '/')} |\n" for n, d in rows)
