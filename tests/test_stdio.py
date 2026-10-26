@@ -12,4 +12,4 @@ async def _list():
         await s.initialize(); return {t.name for t in (await s.list_tools()).tools}
 def test_stdio_lists_all_tools():
     names = asyncio.run(_list())
-    assert names == expected() and len(names) == 40
+    assert names == expected() and len(names) == 42

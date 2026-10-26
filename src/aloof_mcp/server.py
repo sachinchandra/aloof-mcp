@@ -41,12 +41,34 @@ def signup(email: str) -> dict:
     return _r("POST","/v1/signup", json={"email": email})
 @mcp.tool()
 def deploy_app(name: str, image: str = "", git_url: str = "", git_ref: str = "", plan: str = "",
-               port: int = 8080, env: dict[str,str] | None = None, instances: int = 1, region: str = "", api_key: str = "") -> dict:
+               port: int = 8080, env: dict[str,str] | None = None, instances: int = 1, region: str = "", wait: bool = False,
+               timeout_s: int = 600, api_key: str = "") -> dict:
     """Deploy (or redeploy) a backend app. Give either `image` (e.g. 'nginx:alpine') or `git_url` of a repo
     containing a Dockerfile. `port` is the port the app listens on (PORT env is also set). `plan` from list_plans
-    (shared-* or perf-*; gpu-* only once GPUs launch); leave it empty to get the largest plan your tier allows (Free: shared-1x-512mb). `region` from list_regions (live only; default nbg1; fixed once created). Returns app record with public url; poll get_status until status=='running'."""
+    (shared-* or perf-*; gpu-* only once GPUs launch); leave it empty to get the largest plan your tier allows (Free: shared-1x-512mb). `region` from list_regions (live only; default nbg1; fixed once created). Returns app record with public url; poll get_status until status=='running'.
+    wait=true blocks until this deploy finishes (up to timeout_s) and returns ok, requested_release, serving_release, health,
+    mismatch and warning. ok is false when the new release failed, even if an older release is still serving."""
     src = {"image": image} if image else {"git": git_url, **({"ref": git_ref} if git_ref else {})}
-    return _r("POST","/v1/apps", api_key, json={"name":name,"source":src,**({"plan":plan} if plan else {}),"port":port,"env":env or {},"instances":instances, **({"region": region} if region else {})})
+    before = _latest_version(name, api_key) if wait else None
+    r = _r("POST","/v1/apps", api_key, json={"name":name,"source":src,**({"plan":plan} if plan else {}),"port":port,"env":env or {},"instances":instances, **({"region": region} if region else {})})
+    return _wait_release(name, before, timeout_s, api_key, r) if wait else r
+def _latest_version(name, key):
+    try: return ((_r("GET", f"/v1/apps/{name}", key).get("requested_release") or {}).get("version")) or 0
+    except ToolError: return 0
+def _wait_release(name, before, timeout_s, key, first=None):
+    """Poll until a release newer than `before` is active or failed. Success only if that release is the one serving."""
+    import time as _t
+    end = _t.time() + max(10, min(int(timeout_s or 600), 1800)); st = {}
+    while _t.time() < end:
+        st = _r("GET", f"/v1/apps/{name}", key); rq = st.get("requested_release") or {}
+        if (rq.get("version") or 0) > (before or 0) and rq.get("status") in ("active", "failed"): break
+        _t.sleep(3)
+    else:
+        return {"ok": False, "result": "timeout", "warning": f"still deploying after {timeout_s}s; check get_status/diagnose_app",
+                **{k: st.get(k) for k in ("requested_release", "serving_release", "health", "mismatch")}, "url": st.get("url")}
+    ok = bool(st.get("deploy_ok"))
+    return {"ok": ok, "result": "live" if ok else "failed", "warning": st.get("warning"), "error": (st.get("requested_release") or {}).get("error"),
+            **{k: st.get(k) for k in ("requested_release", "serving_release", "health", "mismatch")}, "url": st.get("url"), "status": st.get("status")}
 @mcp.tool()
 def get_status(name: str, api_key: str = "") -> dict:
     """Get status (queued/building/starting/running/failed), instances, url and errors for an app."""
