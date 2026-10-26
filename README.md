@@ -17,6 +17,8 @@ https://mcp.aloof.si/mcp
 Transport: streamable HTTP. Auth: OAuth 2.1 with PKCE (dynamic client registration and Client ID Metadata Documents are
 supported); you log in to Aloof in the browser. An API key also works as a bearer token: `Authorization: Bearer pk_...`.
 
+OAuth scopes: `paas:read` (look only: `inspect`, `list`), `paas:write` (everything except `destroy_app` and `restore`), `paas:admin` (all). `paas` means `paas:admin`. The Authorize page shows which one your assistant asked for, and the server and API both enforce it. A bearer API key has full access. Deploy tokens made with `create_deploy_token` can't destroy unless `allow_destroy=true`.
+
 - **Claude** (claude.ai / Desktop): Settings → Connectors → Add custom connector → `https://mcp.aloof.si/mcp`.
 - **Claude Code**: `claude mcp add --transport http aloof https://mcp.aloof.si/mcp`
 - **Cursor**: `~/.cursor/mcp.json`:

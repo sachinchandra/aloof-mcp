@@ -230,9 +230,10 @@ def add_credential(kind: str, host: str, username: str = "", secret: str = "", a
         return _r("POST", "/v1/git/credentials", api_key, json={"host": host, "kind": kind[4:], "token": secret or None, "app": app or None})
     raise ToolError("kind must be 'registry', 'git_ssh' or 'git_token'")
 @mcp.tool()
-def create_deploy_token(app: str = "", expires_in: str = "90d", api_key: str = "") -> dict:
-    """Create a CI deploy token scoped to one app (or the whole account if app is empty). Shown once."""
-    return _r("POST", "/v1/tokens", api_key, json={"app": app or None, "expires_in": expires_in})
+def create_deploy_token(app: str = "", expires_in: str = "90d", allow_destroy: bool = False, api_key: str = "") -> dict:
+    """Create a CI deploy token scoped to one app (or the whole account if app is empty). Shown once. By default it can deploy, scale and
+    change config but can't destroy apps, delete volumes/databases or restore backups; allow_destroy=true lifts that (full-access callers only)."""
+    return _r("POST", "/v1/tokens", api_key, json={"app": app or None, "expires_in": expires_in, "can_destroy": bool(allow_destroy)})
 @mcp.tool()
 def join_gpu_waitlist(email: str, gpu: str = "", note: str = "") -> dict:
     """GPUs (L4, RTX 4090, L40, A100 80GB, H100) are coming soon. Add an email to the waitlist; optional `gpu` plan id
