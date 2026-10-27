@@ -26,3 +26,12 @@ def test_legacy_names_opt_in():
         names = asyncio.run(go())
     finally: os.environ.pop("ALOOF_MCP_TOOLS")
     assert len(names) == 47 and {"get_status", "diagnose_app", "inspect"} <= names
+
+def test_versions_and_counts_agree():
+    import json, re, pathlib
+    root = pathlib.Path(__file__).resolve().parents[1]
+    v = re.search(r'^version = "([^"]+)"', (root / "pyproject.toml").read_text(), re.M).group(1)
+    sj = json.loads((root / "server.json").read_text())
+    iv = re.search(r"__version__ = \"([^\"]+)\"", (root / "src/aloof_mcp/__init__.py").read_text()).group(1)
+    assert iv == v == sj["version"]
+    assert "25 tools" in sj["description"] and "25 tools:" in (root / "README.md").read_text()

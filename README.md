@@ -136,11 +136,11 @@ Ask your assistant to run `add_domain` (app name + domain). It returns the DNS r
 | A + AAAA | `example.com` | the edge IPv4 and IPv6 in the response | root (apex) domains. ALIAS/ANAME/CNAME flattening to `<app>.aloof.si` also works |
 
 On Cloudflare, set the routing records to **DNS only** (grey cloud). Aloof re-checks DNS every few minutes, so a pending domain verifies by itself;
-`verify_domain` checks immediately, `list_domains` shows each domain's status (`pending`, `verified`, or `dns_error` if DNS later broke; it is never removed automatically) and
+`verify_domain` checks immediately, `list` with `what="domains"` shows each domain's status (`pending`, `verified`, or `dns_error` if DNS later broke; it is never removed automatically) and
 `remove_domain` removes it. Limits per account: Free 1, Hobby 3, Pro 10 domains; unverified claims are released after 7 days. Once `example.com` is verified, `www.example.com`
 redirects to it (308) if it points at Aloof too. Per-registrar steps (Cloudflare, GoDaddy, Namecheap, Route 53): https://www.aloof.si/docs/domains
 
-Destructive tools (`destroy_app`, `delete_postgres`, `restore_postgres`, ...) act immediately; keep your client's
+Destructive tools (`destroy_app`, `restore`, `detach_volume`, ...) act immediately; keep your client's
 "ask before running tools" setting on if you want a human in the loop.
 
 ## Development

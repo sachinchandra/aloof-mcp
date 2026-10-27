@@ -1,0 +1,18 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "io.github.sachinchandra/aloof-mcp",
+  "title": "Aloof",
+  "description": "Deploy and manage backend apps, APIs, workers and Postgres on Aloof (aloof.si). 25 tools.",
+  "version": "0.3.1",
+  "websiteUrl": "https://www.aloof.si",
+  "repository": {
+    "url": "https://github.com/sachinchandra/aloof-mcp",
+    "source": "github"
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.aloof.si/mcp"
+    }
+  ]
+}
